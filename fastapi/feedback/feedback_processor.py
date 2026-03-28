@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from .check_correctness import check_answer_correctness
 from .vocab_check import analyze_vocabulary
 from .get_pause import get_pause_count
-from deepgram import Deepgram
+from deepgram import DeepgramClient
 from .audio_utils import convert_audio_to_wav
 
 # Load environment variables
@@ -21,7 +21,7 @@ class FeedbackProcessor:
         self.client = Groq(
             api_key=os.getenv("GROQ_API_KEY")
         )
-        self.deepgram = Deepgram(os.getenv("DEEPGRAM_API_KEY", "a82d3695358bb0fa3cb3b5775271378ef3a77907"))
+        self.deepgram = DeepgramClient()
 
         self.grammar_prompt = """You are a grammar expert. Analyze the given text for grammatical errors, focusing ONLY on:
         - Incorrect verb tenses (e.g., "I goes" instead of "I go")
@@ -201,10 +201,10 @@ class FeedbackProcessor:
                     "alternatives": 1
                 }
 
-                response = await self.deepgram.transcription.prerecorded(source, options)
+                response = self.deepgram.listen.prerecorded.v("1").transcribe_file(source, options)
 
                 # Extract pronunciation analysis with timing information
-                words = response['results']['channels'][0]['alternatives'][0].get('words', [])
+                words = response.results.channels[0].alternatives[0].words or []
                 
                 # Enhanced pronunciation analysis
                 pronunciation_errors = []

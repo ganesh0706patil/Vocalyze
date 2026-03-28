@@ -13,7 +13,7 @@ function Navbar(props) {
   const handleLogin = () => navigate("/login");
   const handleSignUp = () => navigate("/register");
   const handleGithubClick = () => {
-    window.location.href = "https://github.com/adityawattamwar/Grammalogue-Actual";
+    window.location.href = "https://github.com/ganesh0706patil/Vocalyze";
   };
 
   return (
