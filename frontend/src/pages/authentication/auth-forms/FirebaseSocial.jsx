@@ -14,33 +14,34 @@ import Google from "../../../assets/icons/google.svg";
 export default function FirebaseSocial() {
   const navigate = useNavigate();
 
+  // FirebaseSocial.jsx -> googleHandler function
+
   const googleHandler = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-
       if (result.user) {
         const { displayName, email, uid } = result.user;
+        console.log(">>> [FRONTEND] Google Login Success:", email);
 
-        // Create a payload for the user
         const userPayload = {
           username: displayName,
           email: email,
-          token: uid, // Using Firebase UID as the token here for demonstration
+          token: uid,
         };
 
-        // Save or retrieve the user using the API function
         const user = await saveOrRetrieveUser(userPayload);
-
+      
         if (user) {
-          console.log("User successfully stored/retrieved:", user);
-          // Store token or perform additional logic as needed
+          console.log(">>> [FRONTEND] User saved/retrieved from DB:", user);
           localStorage.setItem("token", user.token);
+          // LOG 4: Check if the key 'currUser' is what your App expects
           localStorage.setItem("currUser", JSON.stringify(userPayload));
+          console.log(">>> [FRONTEND] LocalStorage updated. Navigating to dashboard...");
           navigate("/dashboard");
         }
       }
     } catch (error) {
-      console.error("Error during Google sign-in:", error);
+      console.error(">>> [FRONTEND] Google Sign-In Error:", error);
     }
   };
 

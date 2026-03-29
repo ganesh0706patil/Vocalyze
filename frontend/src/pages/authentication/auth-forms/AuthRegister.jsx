@@ -58,7 +58,7 @@ export default function AuthRegister() {
   const handleRegisterSubmit = async (values, { setSubmitting, setErrors }) => {
     try {
       const { firstname, lastname, email, company, password } = values;
-
+      console.log(">>> [FRONTEND] Attempting Firebase Registration for:", email);
       // Create Firebase user account
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -67,6 +67,7 @@ export default function AuthRegister() {
       );
 
       const firebaseUser = userCredential.user;
+      console.log(">>> [FRONTEND] Firebase Auth Success. UID:", firebaseUser.uid);
 
       // Prepare user data for database storage
       const userPayload = {
@@ -76,7 +77,9 @@ export default function AuthRegister() {
       };
 
       // Save user data to backend database
+      console.log(">>> [FRONTEND] Sending payload to Backend /save:", userPayload);
       const user = await saveOrRetrieveUser(userPayload);
+      console.log(">>> [FRONTEND] Backend response success:", user);
 
       console.log("User successfully registered and saved:", user);
 

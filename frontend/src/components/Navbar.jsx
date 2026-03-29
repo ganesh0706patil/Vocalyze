@@ -26,7 +26,7 @@ function Navbar(props) {
             whileHover={{ scale: 1.02 }}
           >
             <Link to="/" className="flex items-center">
-              <img src="/images/logo.png" alt="Logo" className="h-24" />
+              <img src="/images/VocaLyze.png" alt="Logo" className="h-20" />
             </Link>
           </motion.div>
 
