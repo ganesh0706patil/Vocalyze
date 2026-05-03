@@ -43,7 +43,7 @@ export const saveAssessment = async (assessmentData, onProgressUpdate) => {
   const response = await axios.post(
     `${API_BASE_URL}/assessments/save`,
     {
-      assessmentData: dataToStore,
+      assessmentData: updatedAssessmentData, 
     },
     {
       headers: {

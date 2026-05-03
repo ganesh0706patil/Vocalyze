@@ -97,13 +97,16 @@ async def process_audio(file: UploadFile = File(...), language: str = Form(defau
 async def analyze_text(request: TextAnalysisRequest):
     logger.info(f"Analyzing text: {request.text}")
     try:
-        # Get the audio file path from the temp_audio directory
-        audio_file = None
-        if os.path.exists("temp_audio/question_0.mp4"):
-            audio_file = "temp_audio/question_0.mp4"
-            logger.info(f"Found audio file: {audio_file}")
-        else:
-            logger.warning("Audio file not found in temp_audio directory")
+        # FIX: Use the actual path of the uploaded file instead of hardcoding
+        audio_file = temp_file_manager.temp_file_path
+        
+        # Fallback check for the file on disk
+        if not audio_file or not os.path.exists(audio_file):
+            logger.warning(f"Audio file not found at {audio_file}, checking default...")
+            if os.path.exists("temp_audio/question_0.mp4"):
+                audio_file = "temp_audio/question_0.mp4"
+            else:
+                audio_file = None
 
         feedback = await feedback_processor.analyze_text(
             text=request.text,
@@ -111,9 +114,6 @@ async def analyze_text(request: TextAnalysisRequest):
             tempFileName=audio_file
         )
         
-        if 'correctness' in feedback:
-            logger.info(f"Correctness score: {feedback['correctness'].get('score', 0)}")
-            
         return feedback
     except Exception as e:
         logger.error(f"Error in analyze_text: {str(e)}")
