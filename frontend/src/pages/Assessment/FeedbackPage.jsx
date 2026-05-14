@@ -54,21 +54,14 @@ const FeedbackPage = () => {
       setLoadingIdealAnswer(prev => ({ ...prev, [index]: true }));
       const result = await getIdealAnswer(question, answer);
       
-      // Parse response data, handling both string and object formats
-      let parsedData;
-      try {
-        console.log("Ideal answer response:", result.data);
-        parsedData = JSON.parse(result.data);
-
-      } catch (e) {
-        parsedData = {
-          ideal_answer: 'Error parsing response try again...',
-          user_strengths: 'Unable to analyze try again...',
-          areas_for_improvement: 'Unable to analyze try again...',
-          improvement_suggestions: 'Unable to analyze try again...'
-        };
+      // getIdealAnswer returns response.data directly
+      // so result = { status: "success", data: { ideal_answer, ... } }
+      const parsedData = result.data;
+  
+      if (!parsedData) {
+        throw new Error("No data returned from API");
       }
-
+  
       setIdealAnswers(prev => ({
         ...prev,
         [index]: parsedData

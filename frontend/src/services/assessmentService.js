@@ -4,7 +4,6 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const saveAssessment = async (assessmentData, onProgressUpdate) => {
-  // Extract video URLs from feedback array, filtering out any undefined/null values
   const videoUrls = assessmentData.feedback
     .map((f) => f?.videoUrl)
     .filter(Boolean);
@@ -15,21 +14,16 @@ export const saveAssessment = async (assessmentData, onProgressUpdate) => {
 
   const uploadedUrls = [];
   const currUser = JSON.parse(localStorage.getItem("currUser"));
-  if (!currUser?.email) {
-    throw new Error("User email not found in localStorage");
-  }
-
-  // Sequential upload of videos to S3 with progress tracking
+  
   for (let i = 0; i < videoUrls.length; i++) {
     const s3Data = await uploadVideo(videoUrls[i], i);
     uploadedUrls.push(s3Data.url);
     onProgressUpdate(((i + 1) / videoUrls.length) * 100);
   }
 
-  // Replace local video URLs with S3 URLs while preserving other feedback data
   const updatedFeedback = assessmentData.feedback.map((feedback, index) => ({
     ...feedback,
-    videoUrl: uploadedUrls[index] || feedback.videoUrl // Fallback to original URL if upload failed
+    videoUrl: uploadedUrls[index] || feedback.videoUrl 
   }));
 
   const updatedAssessmentData = {
@@ -38,12 +32,10 @@ export const saveAssessment = async (assessmentData, onProgressUpdate) => {
   };
 
   // Stringify data for backend storage compatibility
-  const dataToStore = JSON.stringify(updatedAssessmentData);
-
   const response = await axios.post(
     `${API_BASE_URL}/assessments/save`,
     {
-      assessmentData: dataToStore,
+      assessmentData: updatedAssessmentData, 
     },
     {
       headers: {
@@ -53,11 +45,7 @@ export const saveAssessment = async (assessmentData, onProgressUpdate) => {
     }
   );
 
-  return {
-    ...updatedAssessmentData,
-    videoUrls: uploadedUrls,
-    savedAt: new Date().toISOString(),
-  };
+  return response.data;
 };
 
 export const deleteAssessment = async (assessmentId) => {
@@ -120,14 +108,27 @@ export const getAllAssessments = async () => {
       },
     });
 
-    // Handle both MongoDB _id and normalized id fields for compatibility
-    return response.data.assessments.map((assessment) => ({
-      id: assessment._id || assessment.id,
-      data: assessment.data,
-      dateAndTime: assessment.dateAndTime,
-      createdAt: assessment.createdAt,
-      updatedAt: assessment.updatedAt,
-    }));
+    return response.data.assessments.map((assessment) => {
+      let parsedData = assessment.data;
+
+      // Defensive Parsing: Peels back layers of stringification if they exist
+      try {
+        while (typeof parsedData === 'string') {
+          parsedData = JSON.parse(parsedData);
+        }
+      } catch (e) {
+        console.error("Failed to parse data for assessment:", assessment.id, e);
+        parsedData = {}; // Fallback to avoid breaking the UI
+      }
+
+      return {
+        id: assessment._id || assessment.id,
+        data: parsedData, // Now guaranteed to be an Object
+        dateAndTime: assessment.dateAndTime,
+        createdAt: assessment.createdAt,
+        updatedAt: assessment.updatedAt,
+      };
+    });
   } catch (error) {
     console.error('Error fetching assessments:', error);
     throw new Error(error.response?.data?.error || error.message);

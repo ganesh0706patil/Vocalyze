@@ -33,28 +33,25 @@ function OverallReport() {
         const assessments = await getAllAssessments();
         const processedReports = assessments
           .map((assessment) => {
-            let parsedData;
             try {
-              parsedData = JSON.parse(assessment.data);
-              parsedData = JSON.parse(parsedData);
-              console.log(parsedData);
-
+              // SAFE PARSING LOGIC
+              let parsedData = assessment.data;
+              
+              // Keep parsing until we have a real object, but stop if it's no longer a string
+              while (typeof parsedData === 'string') {
+                parsedData = JSON.parse(parsedData);
+              }
+  
+              if (!parsedData || !parsedData.questions) return null;
+  
               const feedbackArray = Array.isArray(parsedData?.feedback)
                 ? parsedData.feedback
                 : [];
               const totalQuestions = parsedData.questions.length;
-
-              // Calculate overall stats and performance scores
-              const overallStats = calculateOverallStats(
-                parsedData.feedback,
-                totalQuestions
-              );
-              const performanceScores = calculatePerformanceScores(
-                overallStats,
-                totalQuestions
-              );
-              // const overallScore = calculateOverallScore(performanceScores) ;
-
+  
+              const overallStats = calculateOverallStats(feedbackArray, totalQuestions);
+              const performanceScores = calculatePerformanceScores(overallStats, totalQuestions);
+  
               const {
                 grammarPerformance,
                 pronunciationPerformance,
@@ -62,7 +59,7 @@ function OverallReport() {
                 pausePerformance,
                 correctnessPerformance,
               } = performanceScores;
-
+  
               const overallScore = Math.round(
                 grammarPerformance * 0.25 +
                   pronunciationPerformance * 0.05 +
@@ -70,42 +67,35 @@ function OverallReport() {
                   pausePerformance * 0.15 +
                   correctnessPerformance * 0.4
               );
-
-              console.log(overallScore);
-              const firstFeedback = feedbackArray[0];
-              const duration = firstFeedback?.duration || "N/A";
-
+  
               return {
-                id: assessment._id || assessment.id,
-                date: new Date(assessment.dateAndTime).toISOString(),
+                id: assessment.id,
+                date: assessment.dateAndTime,
                 numberOfQuestions: parsedData.setup?.numberOfQuestions || "N/A",
                 score: overallScore,
                 fluency: Math.round(performanceScores.fluencyPerformance),
                 grammar: Math.round(performanceScores.grammarPerformance),
-                pronunciation: Math.round(
-                  performanceScores.pronunciationPerformance
-                ),
+                pronunciation: Math.round(performanceScores.pronunciationPerformance),
                 questions: totalQuestions,
                 type: parsedData.setup?.language || "English Assessment",
                 difficulty: parsedData.setup?.difficulty || "N/A",
                 topic: parsedData.setup?.topic || "General",
               };
             } catch (parseError) {
-              console.error("Error parsing assessment data:", parseError);
+              console.error("Error parsing record:", assessment.id, parseError);
               return null;
             }
           })
           .filter(Boolean);
-
+  
         setReports(processedReports);
       } catch (err) {
-        console.error("Error fetching assessments:", err);
-        setError("Failed to load assessments. Please try again.");
+        setError("Failed to load assessments.");
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchAssessments();
   }, []);
 
